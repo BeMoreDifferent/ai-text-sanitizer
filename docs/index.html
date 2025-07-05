@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Text Sanitizer</title>
+  <style>
+    /* Reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.4;
+      height: 100%; /* allow 100vh layout */
+    }
+
+    /* Use safe-area insets for modern mobile devices */
+    body {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 0) 1.25rem env(safe-area-inset-bottom, 0);
+      color: #222;
+      overflow: hidden; /* prevent whole-page scrolling */
+    }
+    h1     { font-size: 1.5rem; margin-bottom: 0.5rem; text-align: center; }
+    p.desc { font-size: 0.95rem; margin-bottom: 1rem; text-align: center; color: #555; }
+
+    textarea, pre {
+      width: 100%;
+      height: 30vh;           /* fixed base height */
+      max-height: 45vh;       /* prevent overflow */
+      padding: 0.75rem;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      font-family: inherit;
+      resize: vertical;
+      font-size: 0.95rem;
+      overflow-y: auto;
+    }
+
+    /* Sanitised output should scroll, not the whole page */
+    pre#output {
+      max-height: 40vh;
+      overflow-y: auto;
+      transition: background-color 0.6s ease;
+    }
+
+    /* Flash animation after cleaning */
+    @keyframes flash {
+      0%   { background-color: #fffbdd; }
+      100% { background-color: transparent; }
+    }
+    pre#output.flash { animation: flash 0.9s ease; }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.75rem 0;
+    }
+    button {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background: #0679ff;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #0366d6; }
+    button:disabled { background: #bbb; cursor: not-allowed; }
+
+    .stats {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #444;
+      white-space: normal;
+      position: sticky; /* keep visible even when output scrolls */
+      bottom: calc(env(safe-area-inset-bottom, 0) + 0.25rem);
+      background: #f6f8fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .stats.show { opacity: 1; transform: translateY(0); }
+
+    .stats strong { display:block; margin-bottom: 0.25rem; font-weight:600; }
+    .stats-grid {
+      display:flex;
+      flex-wrap:wrap;
+      gap: 0.25rem 0.75rem;
+    }
+    .stats-grid span { display:flex; gap:0.2rem; align-items:baseline; }
+    .stats-grid code {
+      background:#eaecef;
+      padding:0 0.25rem;
+      border-radius:4px;
+      font-size:0.75rem;
+    }
+    .stats-grid b { font-weight:600; }
+    .stats-grid b.changed { color:#e63946; }
+
+    /* Preserve readability in dark mode for sticky stats */
+    @media (prefers-color-scheme: dark) {
+      body  { background: #121212; color: #eee; }
+      textarea, pre { background: #1e1e1e; border-color: #444; color: #eee; }
+      button { background: #0a84ff; }
+      button:hover { background: #2979ff; }
+      .stats { background: #1e1e1e; border-color: #333; }
+      .stats-grid code { background:#2a2a2a; }
+    }
+  </style>
+  <script type="module">
+    import { sanitizeAiText } from 'https://unpkg.com/ai-text-sanitizer?module';
+
+    const inputEl   = document.getElementById('input');
+    const outputEl  = document.getElementById('output');
+    const statsEl   = document.getElementById('stats');
+    const cleanBtn  = document.getElementById('clean');
+    const copyBtn   = document.getElementById('copy');
+
+    function update() {
+      const { cleaned, changes } = sanitizeAiText(inputEl.value);
+      outputEl.textContent = cleaned;
+
+      // Build human-readable stats string
+      const entries = Object.entries(changes).filter(([k]) => k !== 'total');
+      const entriesHtml = entries
+        .map(([k, v]) => `<span><code>${k}</code> <b class="${v ? 'changed' : ''}">${v}</b></span>`) 
+        .join('');
+      statsEl.innerHTML = `<strong>Changes (${changes.total})</strong><div class=\"stats-grid\">${entriesHtml}</div>`;
+
+      copyBtn.disabled = !cleaned;
+      statsEl.classList.toggle('show', Boolean(inputEl.value));
+
+      // Flash highlight
+      outputEl.classList.remove('flash');
+      void outputEl.offsetWidth; // force reflow to restart animation
+      if (cleaned) outputEl.classList.add('flash');
+    }
+
+    // Manual clean button
+    cleanBtn.addEventListener('click', update);
+
+    // Auto-clean after user stops typing for 400 ms
+    let autoTimer;
+    inputEl.addEventListener('input', () => {
+      clearTimeout(autoTimer);
+      autoTimer = setTimeout(update, 400);
+    });
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(outputEl.textContent).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => (copyBtn.textContent = 'Copy cleaned text'), 1500);
+      });
+    });
+  </script>
+</head>
+<body>
+  <h1>AI Text Sanitizer</h1>
+  <p class="desc">Remove hidden characters, fancy punctuation & watermark markers from AI-generated text. <a href="https://github.com/BeMoreDifferent/ai-text-sanitizer" target="_blank" rel="noopener">GitHub ↗</a></p>
+
+  <label for="input" style="display:none">Input</label>
+  <textarea id="input" placeholder="Paste AI-generated text here…" autofocus></textarea>
+
+  <div class="controls">
+    <button id="clean">Clean it</button>
+    <button id="copy" disabled>Copy cleaned text</button>
+  </div>
+
+  <pre id="output" aria-label="Sanitised output"></pre>
+  <div class="stats" id="stats"></div>
+</body>
+</html> 
