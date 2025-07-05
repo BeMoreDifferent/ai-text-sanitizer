@@ -1,6 +1,6 @@
 {
   "name": "ai-text-sanitizer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Utility to sanitise AI-generated text.",
   "keywords": ["text", "sanitize", "ai", "unicode", "watermark-removal", "ai-watermark"],
   "license": "MIT",
