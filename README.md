@@ -55,6 +55,17 @@ console.log(changes);  /* {
                         } */
 ```
 
+## TypeScript
+
+`ai-text-sanitizer` ships with built-in `.d.ts` declarations. Nothing extra to install — just import and enjoy full IntelliSense:
+
+```ts
+import { sanitizeAiText, type SanitizeResult } from 'ai-text-sanitizer';
+
+const result: SanitizeResult = sanitizeAiText('مرحبا\u200Fالعالم');
+console.log(result.cleaned);
+```
+
 ### API
 
 `sanitizeAiText(text, options?)` → `{ cleaned, changes }`
