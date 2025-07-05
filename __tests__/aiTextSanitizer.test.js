@@ -62,4 +62,22 @@ describe('sanitizeAiText', () => {
     expect(cleaned.charCodeAt(0)).toBe(0xFEFF);
     expect(cleaned.slice(1)).toBe('Hello');
   });
+
+  test('removes directional marks in Arabic text', () => {
+    const input = 'مرحبا\u200Fالعالم'; // Contains Right-To-Left Mark (RLM)
+    const { cleaned } = sanitizeAiText(input);
+    expect(cleaned).toBe('مرحباالعالم');
+  });
+
+  test('normalises combining accents via NFKC', () => {
+    const input = 'Cafe\u0301'; // "e" + COMBINING ACUTE ACCENT
+    const { cleaned } = sanitizeAiText(input);
+    expect(cleaned).toBe('Café');
+  });
+
+  test('strips zero-width space in multilingual sentence', () => {
+    const input = 'Hello\u200B 世界'; // Zero-width space between Latin and CJK
+    const { cleaned } = sanitizeAiText(input);
+    expect(cleaned).toBe('Hello 世界');
+  });
 }); 
