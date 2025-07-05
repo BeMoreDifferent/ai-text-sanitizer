@@ -1,0 +1,8 @@
+# Node dependencies
+node_modules/
+
+# pnpm lockfile
+pnpm-lock.yaml
+
+# Jest coverage output
+coverage/ 

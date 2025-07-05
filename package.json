@@ -1,0 +1,17 @@
+{
+  "name": "ai-text-sanitizer",
+  "version": "0.1.0",
+  "description": "Utility to sanitise AI-generated text.",
+  "type": "module",
+  "main": "aiTextSanitizer.js",
+  "exports": "./aiTextSanitizer.js",
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+} 
