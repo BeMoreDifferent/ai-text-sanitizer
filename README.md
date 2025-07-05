@@ -87,6 +87,10 @@ HTML fragments, code snippets, emoji sequences, and BOM handling.
   broader transliteration, customise the `PRETTIES` table in
   `aiTextSanitizer.js`.
 
+## Contributing
+
+Contributions, bug reports, and feature requests are **very welcome** — feel free to open an issue or submit a pull request. Please ensure the test suite passes (`pnpm test`) and follow conventional commit messages for ease of release automation.
+
 ---
 This repository contains only the core library and test suite to keep the
 footprint minimal. 
