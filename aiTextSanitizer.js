@@ -41,8 +41,11 @@ const SPACE_LIKE_RE = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g;
 /** Carriage-return (CR / CRLF) line endings. */
 const CR_RE = /\r\n?|\u000D\n?/g;
 
-/** Citation placeholders emitted by some LLMs. */
-const CITATION_RE = /\(oaicite:\d+\){index=\d+}/g;
+/**
+ * Citation placeholders emitted by some LLMs (optionally preceded by spaces).
+ * Leading spaces are included so their removal doesn't leave stray gaps.
+ */
+const CITATION_RE = / *\(oaicite:\d+\){index=\d+}/g;
 
 /** "Pretty" punctuation replacements mapped to plain ASCII. */
 const PRETTIES = [
