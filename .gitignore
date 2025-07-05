@@ -5,4 +5,7 @@ node_modules/
 pnpm-lock.yaml
 
 # Jest coverage output
-coverage/ 
+coverage/
+
+# dist build output
+dist/ 

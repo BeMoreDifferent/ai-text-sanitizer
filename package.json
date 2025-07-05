@@ -1,6 +1,6 @@
 {
   "name": "ai-text-sanitizer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Utility to sanitise AI-generated text.",
   "keywords": ["text", "sanitize", "ai", "unicode", "watermark-removal", "ai-watermark"],
   "license": "MIT",
@@ -10,17 +10,23 @@
   },
   "author": "BeMoreDifferent <you@example.com>",
   "type": "module",
-  "main": "aiTextSanitizer.js",
-  "exports": "./aiTextSanitizer.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "files": [
-    "aiTextSanitizer.js"
+    "dist"
   ],
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "prepublishOnly": "npm test"
+    "build": "tsup src/index.ts --format esm --dts --out-dir dist",
+    "test": "npm run build && NODE_OPTIONS=--experimental-vm-modules jest",
+    "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
-    "jest": "^30.0.0"
+    "jest": "^30.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
   },
   "engines": {
     "node": ">=18"

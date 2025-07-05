@@ -1,4 +1,4 @@
-import { sanitizeAiText } from '../aiTextSanitizer.js';
+import { sanitizeAiText } from '../dist/index.js';
 
 describe('sanitizeAiText', () => {
   test('removes invisible characters and exotic spaces', () => {
