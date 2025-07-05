@@ -123,8 +123,9 @@ export function sanitizeAiText(text, opts = {}) {
   }
 
   /* Strip invisibles / format chars (optionally keep emoji glue). */
-  // eslint-disable-next-line regexp/no-legacy-features
-  const invisiblesRe = supportsUnicodeProps ? /[\p{Cf}&&[^\u200D\uFE00-\uFE0F]]/gu : LEGACY_INVISIBLES_RE;
+  // Node.js RegExp engine does not support "&&" intersection. Use an explicit
+  // set that excludes ZWJ (U+200D) and variation selectors by default.
+  const invisiblesRe = /[\u00AD\u180E\u200B-\u200C\u200E-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g;
   let removedInvisible = count(text, invisiblesRe);
   text = text.replace(invisiblesRe, '');
 
