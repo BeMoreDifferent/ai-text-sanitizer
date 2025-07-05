@@ -2,11 +2,22 @@
   "name": "ai-text-sanitizer",
   "version": "0.1.0",
   "description": "Utility to sanitise AI-generated text.",
+  "keywords": ["text", "sanitize", "ai", "unicode", "watermark-removal", "ai-watermark"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BeMoreDifferent/ai-text-sanitizer.git"
+  },
+  "author": "BeMoreDifferent <you@example.com>",
   "type": "module",
   "main": "aiTextSanitizer.js",
   "exports": "./aiTextSanitizer.js",
+  "files": [
+    "aiTextSanitizer.js"
+  ],
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "prepublishOnly": "npm test"
   },
   "devDependencies": {
     "jest": "^30.0.0"
