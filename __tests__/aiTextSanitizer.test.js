@@ -29,4 +29,37 @@ describe('sanitizeAiText', () => {
     expect(keep).toBe('A\u200DBC');
     expect(strip).toBe('ABC');
   });
+
+  test('HTML snippet retains markup while cleaning text nodes', () => {
+    const html = '<p>“Hello\u200B&nbsp;world…”</p>'; // fancy quotes + ZWSP + NBSP + ellipsis
+    const { cleaned } = sanitizeAiText(html);
+    expect(cleaned).toBe('<p>"Hello&nbsp;world..."</p>');
+  });
+
+  test('code snippet cleans exotic whitespace but keeps syntax chars', () => {
+    const code = 'const foo = "bar";\u200B\u00A0// comment';
+    const { cleaned } = sanitizeAiText(code);
+    expect(cleaned).toBe('const foo = "bar"; // comment');
+  });
+
+  test('preserves complex emoji sequence by default', () => {
+    const family = '👨‍👩‍👧‍👦'; // Family emoji uses ZWJ
+    const { cleaned } = sanitizeAiText(family);
+    expect(cleaned).toBe(family);
+  });
+
+  test('strips ZWJ from emoji when keepEmoji is false', () => {
+    const family = '👨‍👩‍👧‍👦';
+    // Remove ZWJ (U+200D) to get plain individual emojis joined without glyph fusion
+    const expected = family.replace(/\u200D/g, '');
+    const { cleaned } = sanitizeAiText(family, { keepEmoji: false });
+    expect(cleaned).toBe(expected);
+  });
+
+  test('retains BOM round-trip', () => {
+    const bomText = '\uFEFFHello';
+    const { cleaned } = sanitizeAiText(bomText);
+    expect(cleaned.charCodeAt(0)).toBe(0xFEFF);
+    expect(cleaned.slice(1)).toBe('Hello');
+  });
 }); 
