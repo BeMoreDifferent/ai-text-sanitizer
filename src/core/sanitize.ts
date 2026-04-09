@@ -16,6 +16,7 @@ import {
   replacePrettyPunctuation,
   stripBom,
   stripCitations,
+  stripModelArtifacts,
 } from './normalize.js';
 import { runDetectors } from '../detect/index.js';
 import type {
@@ -62,6 +63,7 @@ export interface SanitizeChanges {
   removedCtrl: number;
   removedBidi: number;
   removedCitations: number;
+  removedModelArtifacts: number;
   prettified: number;
   collapsedSpaces: number;
   rewrittenSegments: number;
@@ -259,6 +261,7 @@ export function sanitizeAiText(
         removedCtrl: 0,
         removedBidi: 0,
         removedCitations: 0,
+        removedModelArtifacts: 0,
         prettified: 0,
         collapsedSpaces: 0,
         rewrittenSegments: 0,
@@ -285,6 +288,9 @@ export function sanitizeAiText(
   const { text: bomFree, hadBom } = stripBom(text);
   const normalizedEol = normalizeLineEndings(bomFree);
   let working = normalizedEol.text;
+
+  const modelArtifactResult = stripModelArtifacts(working);
+  working = modelArtifactResult.text;
 
   const citationResult = stripCitations(working);
   working = citationResult.text;
@@ -347,6 +353,7 @@ export function sanitizeAiText(
     invisibleResult.removedInvisible +
     invisibleResult.removedCtrl +
     invisibleResult.removedBidi +
+    modelArtifactResult.removed +
     citationResult.removed +
     prettifiedTotal +
     collapsedSpaces +
@@ -362,6 +369,7 @@ export function sanitizeAiText(
       removedCtrl: invisibleResult.removedCtrl,
       removedBidi: invisibleResult.removedBidi,
       removedCitations: citationResult.removed,
+      removedModelArtifacts: modelArtifactResult.removed,
       prettified: prettifiedTotal,
       collapsedSpaces,
       rewrittenSegments: rewriteApplied,

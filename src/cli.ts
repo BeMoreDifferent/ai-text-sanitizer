@@ -99,7 +99,8 @@ export async function run(): Promise<void> {
     const destructiveChange =
       result.changes.removedInvisible > 0 ||
       result.changes.removedCtrl > 0 ||
-      result.changes.removedCitations > 0;
+      result.changes.removedCitations > 0 ||
+      result.changes.removedModelArtifacts > 0;
 
     if (detectorHit || destructiveChange) {
       console.error(

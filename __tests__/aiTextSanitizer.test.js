@@ -31,6 +31,50 @@ describe('sanitizeAiText pipeline', () => {
     expect(result.changes.rawTagCount).toBe(1);
   });
 
+  test('removes visible model citation artifacts without changing prose', () => {
+    const input = 'Evidence is limited. \uE200cite\uE202turn16view1\uE201';
+    const result = sanitizeAiText(input);
+
+    expect(result.cleaned).toBe('Evidence is limited.');
+    expect(result.changes.removedModelArtifacts).toBe(1);
+    expect(result.changes.removedCitations).toBe(0);
+  });
+
+  test('removes visible model entity artifacts without changing surrounding words', () => {
+    const input = 'Google \uE200entity\uE202["company","Google DeepMind"]\uE201 published it.';
+    const result = sanitizeAiText(input);
+
+    expect(result.cleaned).toBe('Google published it.');
+    expect(result.changes.removedModelArtifacts).toBe(1);
+  });
+
+  test('removes multiple adjacent visible model artifacts', () => {
+    const input = 'Claim \uE200cite\uE202turn1\uE201 \uE200entity\uE202["org","NIST"]\uE201 stands.';
+    const result = sanitizeAiText(input);
+
+    expect(result.cleaned).toBe('Claim stands.');
+    expect(result.changes.removedModelArtifacts).toBe(2);
+  });
+
+  test('preserves malformed model artifact fragments and unrelated private-use characters', () => {
+    const unclosed = 'Keep \uE200cite\uE202turn16view1 text';
+    const noSeparator = 'Keep \uE200cite turn16view1\uE201 text';
+    const privateUseGlyph = 'Logo \uE250 mark';
+
+    expect(sanitizeAiText(unclosed).cleaned).toBe(unclosed);
+    expect(sanitizeAiText(noSeparator).cleaned).toBe(noSeparator);
+    expect(sanitizeAiText(privateUseGlyph).cleaned).toBe(privateUseGlyph);
+  });
+
+  test('reports visible model artifacts separately from legacy oaicite placeholders', () => {
+    const input = 'Alpha \uE200cite\uE202turn16view1\uE201 (oaicite:12){index=12} Beta';
+    const result = sanitizeAiText(input);
+
+    expect(result.cleaned).toBe('Alpha Beta');
+    expect(result.changes.removedModelArtifacts).toBe(1);
+    expect(result.changes.removedCitations).toBe(1);
+  });
+
   test('removes supplementary variation-selector watermark payloads', () => {
     const input = `A${String.fromCodePoint(0xe0100)}I`;
     const result = sanitizeAiText(input);
@@ -95,6 +139,22 @@ describe('sanitizeAiText pipeline', () => {
           category: 'variation-selector',
           count: 1,
           codePoints: ['U+E0100'],
+        }),
+      ])
+    );
+  });
+
+  test('reports heuristic findings for visible model artifacts', () => {
+    const result = sanitizeAiText('A \uE200cite\uE202turn16view1\uE201 B', {
+      detectors: ['heuristic'],
+    });
+
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'heuristic',
+          category: 'model-artifact',
+          count: 1,
         }),
       ])
     );
@@ -217,6 +277,34 @@ describe('CLI', () => {
     const report = JSON.parse(readFileSync(reportPath, 'utf8'));
     expect(report.changes.removedTags).toBe(1);
     expect(report.changes.rawTagCount).toBe(1);
+    expect(readFileSync(outputPath, 'utf8')).toBe('Hi');
+  });
+
+  test('strict mode reports visible model artifacts', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sanitizer-model-artifacts-'));
+    const inputPath = join(dir, 'input.txt');
+    const outputPath = join(dir, 'output.txt');
+    const reportPath = join(dir, 'report.json');
+    writeFileSync(inputPath, 'Hi \uE200cite\uE202turn16view1\uE201', 'utf8');
+
+    const run = spawnSync(
+      'node',
+      [
+        cliPath,
+        '--in',
+        inputPath,
+        '--out',
+        outputPath,
+        '--report',
+        reportPath,
+        '--strict',
+      ],
+      { encoding: 'utf8' }
+    );
+
+    expect(run.status).toBe(2);
+    const report = JSON.parse(readFileSync(reportPath, 'utf8'));
+    expect(report.changes.removedModelArtifacts).toBe(1);
     expect(readFileSync(outputPath, 'utf8')).toBe('Hi');
   });
 });

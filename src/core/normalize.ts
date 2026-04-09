@@ -9,6 +9,12 @@ const CR_RE = /\r\n?|\u000d\n?/g;
  */
 const CITATION_RE = / *(\(oaicite:\d+\){index=\d+})/g;
 
+/**
+ * Visible model/source annotation envelopes copied from chat surfaces.
+ * These use private-use sentinels but are stripped only when fully bounded.
+ */
+const MODEL_ARTIFACT_RE = /\ue200[A-Za-z-]+(?:\ue202[^\ue200\ue201]*)+\ue201/g;
+
 /** "Pretty" punctuation replacements mapped to plain ASCII. */
 const PRETTIES: { re: RegExp; repl: string }[] = [
   { re: /[\u2018\u2019\u201a]/g, repl: "'" },
@@ -30,6 +36,11 @@ export interface NormalizeLineEndingResult {
 }
 
 export interface StripCitationsResult {
+  text: string;
+  removed: number;
+}
+
+export interface StripModelArtifactsResult {
   text: string;
   removed: number;
 }
@@ -62,6 +73,11 @@ export function normalizeLineEndings(text: string): NormalizeLineEndingResult {
 export function stripCitations(text: string): StripCitationsResult {
   const removed = text.match(CITATION_RE)?.length ?? 0;
   return removed ? { text: text.replace(CITATION_RE, ''), removed } : { text, removed: 0 };
+}
+
+export function stripModelArtifacts(text: string): StripModelArtifactsResult {
+  const removed = text.match(MODEL_ARTIFACT_RE)?.length ?? 0;
+  return removed ? { text: text.replace(MODEL_ARTIFACT_RE, ''), removed } : { text, removed: 0 };
 }
 
 export function normalizeForm(

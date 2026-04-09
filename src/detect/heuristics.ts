@@ -7,6 +7,8 @@ import {
 } from '../tables/unicode.js';
 import type { HeuristicConfig, WatermarkFinding } from './types.js';
 
+const MODEL_ARTIFACT_RE = /\ue200[A-Za-z-]+(?:\ue202[^\ue200\ue201]*)+\ue201/g;
+
 function countMatches(text: string, predicate: (cp: number) => boolean): number {
   let count = 0;
   for (const ch of text) if (predicate(ch.codePointAt(0)!)) count++;
@@ -44,6 +46,7 @@ export function heuristicFlags(
   const tagThreshold = cfg?.tagThreshold ?? 0;
   const variationSelectorThreshold = cfg?.variationSelectorThreshold ?? 0;
   const defaultIgnorableThreshold = cfg?.defaultIgnorableThreshold ?? 0;
+  const modelArtifactThreshold = cfg?.modelArtifactThreshold ?? 0;
 
   const zeroWidthCount = countMatches(raw, (cp) => ZERO_WIDTH_POINTS.has(cp));
   const exoticSpaces = countMatches(raw, (cp) => EXOTIC_SPACES.has(cp));
@@ -52,8 +55,18 @@ export function heuristicFlags(
     isVariationSelector(cp)
   );
   const defaultIgnorableCount = countMatches(raw, isDefaultIgnorablePayload);
+  const modelArtifactCount = raw.match(MODEL_ARTIFACT_RE)?.length ?? 0;
 
   const findings: WatermarkFinding[] = [];
+  if (modelArtifactCount > modelArtifactThreshold) {
+    findings.push({
+      kind: 'heuristic',
+      category: 'model-artifact',
+      count: modelArtifactCount,
+      note: `model-artifact count=${modelArtifactCount}`,
+    });
+  }
+
   if (zeroWidthCount > zeroWidthThreshold) {
     findings.push({
       kind: 'heuristic',

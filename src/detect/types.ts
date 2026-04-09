@@ -69,6 +69,10 @@ export interface HeuristicConfig {
    * Count threshold for other default-ignorable controls before flagging.
    */
   defaultIgnorableThreshold?: number;
+  /**
+   * Count threshold for visible model annotation artifacts before flagging.
+   */
+  modelArtifactThreshold?: number;
 }
 
 export interface DetectorConfigs {
