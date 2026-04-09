@@ -2,8 +2,9 @@
 
 Utility for post-processing AI-generated text. It normalises output by
 removing invisible characters and deterministic raw-text watermark artifacts,
-folding exotic whitespace, converting "pretty" punctuation to ASCII, and
-stripping inline citation placeholders such as `(oaicite:12){index=12}`.
+visible model/source annotation artifacts, folding exotic whitespace,
+converting "pretty" punctuation to ASCII, and stripping inline citation
+placeholders such as `(oaicite:12){index=12}`.
 
 ## About
 
@@ -11,7 +12,7 @@ ai-text-sanitizer is a tiny zero-dependency ES module for cleaning and normalisi
 
 ## Description
 
-The library removes invisible Unicode watermark characters, Unicode tag payloads, supplementary variation selectors, other default-ignorable controls, exotic whitespace, and ASCII control codes. It also converts *fancy* punctuation to plain ASCII, strips inline citation placeholders, and optionally collapses redundant spaces, all while returning per-rule change statistics so you can audit the process.
+The library removes invisible Unicode watermark characters, Unicode tag payloads, supplementary variation selectors, visible model/source transport artifacts, other default-ignorable controls, exotic whitespace, and ASCII control codes. It also converts *fancy* punctuation to plain ASCII, strips inline citation placeholders, and optionally collapses redundant spaces, all while returning per-rule change statistics so you can audit the process.
 
 ## Features
 
@@ -25,10 +26,13 @@ The library removes invisible Unicode watermark characters, Unicode tag payloads
 * Folds a wide range of Unicode space characters to a standard space.
 * Collapses runs of multiple spaces and normalises line endings to `LF`.
 * Eliminates citation placeholders emitted by some language models.
+* Removes bounded visible model annotation envelopes copied from chat surfaces
+  while preserving malformed fragments and unrelated private-use glyphs.
 * Optionally preserves or removes emoji glue characters (ZWJ / variation
   selectors).
 * Returns granular change statistics so you can audit the cleaning process,
-  including tag, variation-selector, and default-ignorable counters.
+  including tag, variation-selector, default-ignorable, and visible model
+  artifact counters.
 * Offers heuristic, SynthID-compatible, and soft-watermark detectors so you can
   record findings without mutating text.
 * Provides opt-in rewrite strategies (`light` / `aggressive`) to locally
@@ -60,6 +64,7 @@ console.log(changes);  /* {
                           removedDefaultIgnorables: 1,
                           removedCtrl: 0,
                           removedCitations: 1,
+                          removedModelArtifacts: 0,
                           prettified: 3,
                           collapsedSpaces: 0,
                           total: 5
@@ -120,10 +125,10 @@ are not double-counted.
 
 Three detectors ship with the library:
 
-* `heuristic` – counts zero-width marks, exotic spaces, Unicode tag payloads,
-  variation selectors, and other default-ignorable controls in the original
-  text. Findings include optional `category`, `count`, and `codePoints`
-  metadata.
+* `heuristic` – counts visible model annotation artifacts, zero-width marks,
+  exotic spaces, Unicode tag payloads, variation selectors, and other
+  default-ignorable controls in the original text. Findings include optional
+  `category`, `count`, and `codePoints` metadata.
 * `synthid` – delegates to your SynthID scoring routine. Provide
   `detectorConfigs.synthid = { score(tokens) { ... } }` to bridge Google's
   open implementation and pass your key/PRF.
@@ -136,17 +141,18 @@ Use `unifiedDiff(original, cleaned)` to create a CI-friendly diff for manual
 audits, or call the CLI with `--report` to export JSON.
 
 SynthID, green-list watermarks, and modern AI text classifiers are token- or
-statistics-based systems. This package only removes deterministic raw-string
-artifacts by default; token-statistical watermark checks require caller-provided
-detector hooks and do not mutate text.
+statistics-based systems. This package only removes deterministic string-level
+identifiers and transport artifacts by default; token-statistical watermark
+checks require caller-provided detector hooks and do not mutate text.
 
 ### Rewrite strategies
 
 Calling `sanitizeAiText` with `rewriteStrategy: 'light' | 'aggressive'` applies a
-deterministic, local rewrite after sanitization. The light strategy flips
+deterministic, local rewrite after sanitization. Rewrite strategies are opt-in
+and are not part of the default prevention path. The light strategy flips
 quotation style and re-chunks sentences; the aggressive strategy further
-substitutes a small synonym map. Rewrites are counted in `changes.rewrittenSegments`
-so you can detect when phrasing was adjusted.
+substitutes a small synonym map. Rewrites are counted in
+`changes.rewrittenSegments` so you can detect when phrasing was adjusted.
 
 ### CLI
 
@@ -174,7 +180,8 @@ HTML fragments, code snippets, emoji sequences, and BOM handling.
 
 * The function operates on raw strings; it does **not** parse or sanitise HTML
   structure. HTML tags remain untouched but are treated as plain text.
-* The sanitizer does not promise that text will evade SynthID, green-list
+* The sanitizer removes deterministic string-level identifiers and transport
+  artifacts. It does **not** promise that text will evade SynthID, green-list
   watermark detectors, neural AI detectors, or third-party "AI text" scoring
   tools.
 * C2PA and similar content credentials live in file or asset metadata, not in
