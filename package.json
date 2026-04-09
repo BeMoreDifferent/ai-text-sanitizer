@@ -13,13 +13,17 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./cli": "./dist/cli.js"
+  },
+  "bin": {
+    "ai-text-sanitizer": "dist/cli.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --out-dir dist",
+    "build": "tsup",
     "test": "npm run build && NODE_OPTIONS=--experimental-vm-modules jest",
     "prepublishOnly": "npm run build && npm test"
   },
